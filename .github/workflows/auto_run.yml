@@ -24,4 +24,4 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name: Run your script
-        run: zone_wise_reports.py  # 👈 change to your actual filename
+        run: scheduler.py  # 👈 change to your actual filename
