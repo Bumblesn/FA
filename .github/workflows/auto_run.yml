@@ -3,7 +3,7 @@ name: Auto Run Script
 on:
   schedule:
     # 🧪 Test run at 00:22 AM IST (18:52 UTC)
-    - cron: "30 18 * * *"
+    - cron: "0 19 * * *"
   workflow_dispatch:  # allows manual trigger for testing too
 
 jobs:
@@ -24,4 +24,4 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name: Run your script
-        run: python scheduler.py  # 👈 change to your actual filename
+        run: zone_wise_reports.py  # 👈 change to your actual filename
