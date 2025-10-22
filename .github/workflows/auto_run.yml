@@ -3,7 +3,7 @@ name: Auto Run Script
 on:
   schedule:
     # 🧪 Test run at 00:22 AM IST (18:52 UTC)
-    - cron: "0 19 * * *"
+    - cron: "8 19 * * *"
   workflow_dispatch:  # allows manual trigger for testing too
 
 jobs:
