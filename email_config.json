@@ -1,0 +1,26 @@
+{
+    "East": {
+        "to": ["pankaj.das3@wipro.com","tanmoy.raha@wipro.com","jajati.jena@wipro.com","gaurav.sinha@wipro.com","ashish.bhatnagar2@wipro.com",""],
+        "cc": ["rajesh.kannath@wipro.com","mohit.shrotriya@wipro.com","abhishek.paul4@wipro.com","pradeep.namburu@flick2know.com","mir@flick2know.com","vivek@flick2know.com"]
+    },
+    "West": {
+        "to": ["bandu.panbude@wipro.com","dhananjay.singh11@wipro.com","mahesh.khanvilkar@wipro.com","parvez.khan5@wipro.com","yogesh.pandey@wipro.com","paraskumar.gandhi@wipro.com"],
+        "cc": ["rajesh.kannath@wipro.com","mohit.shrotriya@wipro.com","abhishek.paul4@wipro.com","pradeep.namburu@flick2know.com","mir@flick2know.com","vivek@flick2know.com"]
+    },
+    "South_1": {
+        "to": ["abhijit.shetty@wipro.com","chidambar.kulkarni@wipro.com","rajesh.kumard@wipro.com","muhammed.alangadan@wipro.com","mukesh.mehta@wipro.com"],
+        "cc": ["rajesh.kannath@wipro.com","mohit.shrotriya@wipro.com","abhishek.paul4@wipro.com","pradeep.namburu@flick2know.com","mir@flick2know.com","vivek@flick2know.com"]
+    },
+    "South_2": {
+        "to": ["mohammad.parvaz@wipro.com","hirishikkesh.ramesh@wipro.com","ravi.ch@wipro.com","reuben.joseph@wipro.com"],
+        "cc": ["rajesh.kannath@wipro.com","mohit.shrotriya@wipro.com","abhishek.paul4@wipro.com","pradeep.namburu@flick2know.com","mir@flick2know.com","vivek@flick2know.com"]
+    },
+    "North_1": {
+        "to": ["arunabha.chakraborty@wipro.com","rishabh.sethi@wipro.com","amit.nimje@wipro.com","tarun.aggarwal5@wipro.com","ankit.saxena11@wipro.com"],
+        "cc": ["rajesh.kannath@wipro.com","mohit.shrotriya@wipro.com","abhishek.paul4@wipro.com","pradeep.namburu@flick2know.com","mir@flick2know.com","vivek@flick2know.com"]
+    },
+    "North_2": {
+        "to": ["tayyab.jafri@wipro.com","manoj.kumar1@wipro.com","gagan.saggar1@wipro.com","sudhanshu.khandelwal@wipro.com","atul.handa@wipro.com"],
+        "cc": ["rajesh.kannath@wipro.com","mohit.shrotriya@wipro.com","abhishek.paul4@wipro.com","pradeep.namburu@flick2know.com","mir@flick2know.com","vivek@flick2know.com"]
+    }
+}
