@@ -27,4 +27,4 @@ jobs:
           fi
 
       - name: Run Scheduler Script
-        run: python scheduler.py
+        run: python3 scheduler.py
