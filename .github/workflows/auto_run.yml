@@ -1,9 +1,9 @@
-name: Daily Zone Report (Skip Sundays)
+name: Wipro Lighting ------------> Manager Report
 
 on:
   schedule:
-    # Run daily at 23:06 IST (17:36 UTC)
-    - cron: '36 17 * * *'
+    # Run daily at 9:30 AM IST (04:00 UTC)
+    - cron: '0 4 * * *'
   workflow_dispatch:
 
 jobs:
@@ -31,22 +31,22 @@ jobs:
         run: |
           day=$(date +%u)  # 1=Mon ... 7=Sun
           if [ "$day" -eq 7 ]; then
-            echo "🟡 Today is Sunday. Skipping execution."
+            echo "Today is Sunday. Skipping execution."
             exit 0
           fi
 
-          echo "✅ Running zone_wise_reports.py ..."
+          echo "Running zone_wise_reports.py ..."
           for i in {1..5}; do
             echo "Attempt $i/5"
             if python zone_wise_reports.py; then
-              echo "✅ Success on attempt $i!"
+              echo "Success on attempt $i!"
               break
             fi
             if [ $i -lt 5 ]; then
-              echo "❌ Failed. Retrying in 5 minutes..."
+              echo "Failed. Retrying in 5 minutes..."
               sleep 300
             fi
-          done || (echo "🚨 All retries failed!" && exit 1)
+          done || (echo "All retries failed!" && exit 1)
 
       - name: Upload logs
         if: always()
