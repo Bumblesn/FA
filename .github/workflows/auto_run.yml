@@ -2,15 +2,13 @@ name: Daily Zone Report (Skip Sundays)
 
 on:
   schedule:
-    # Run daily at 22:51 UTC
-    - cron: '51 22 * * *'
-  workflow_dispatch: # Allows manual trigger
+    # Run daily at 23:00 IST (17:30 UTC)
+    - cron: '30 17 * * *'
+  workflow_dispatch:  # Manual trigger option
 
 jobs:
   run-report:
     runs-on: ubuntu-latest
-    # Skip if today is Sunday (GitHub's day_of_week: 0=Sun, 1=Mon, etc.)
-    if: github.event_name == 'schedule' && (format('ddd', github.event.schedule.timestamp) != 'Sun')
 
     steps:
       - name: Checkout code
@@ -19,7 +17,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'  # Match your Python version
+          python-version: '3.11'
 
       - name: Install dependencies
         run: |
@@ -29,24 +27,31 @@ jobs:
       - name: Create logs directory
         run: mkdir -p logs
 
-      - name: Run zone_wise_reports.py (with retries)
+      - name: Check day and run script (skip Sundays)
         run: |
+          day=$(date +%u)  # 1=Mon ... 7=Sun
+          if [ "$day" -eq 7 ]; then
+            echo "🟡 Today is Sunday. Skipping execution."
+            exit 0
+          fi
+
+          echo "✅ Running zone_wise_reports.py ..."
           for i in {1..5}; do
-            echo "Attempt $i/5: Running zone_wise_reports.py"
+            echo "Attempt $i/5"
             if python zone_wise_reports.py; then
-              echo "Success on attempt $i!"
+              echo "✅ Success on attempt $i!"
               break
             fi
             if [ $i -lt 5 ]; then
-              echo "Failed. Retrying in 5 minutes..."
+              echo "❌ Failed. Retrying in 5 minutes..."
               sleep 300
             fi
-          done || (echo "All retries failed!" && exit 1)
+          done || (echo "🚨 All retries failed!" && exit 1)
 
-      - name: Upload logs as artifact (for debugging)
+      - name: Upload logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: daily-logs-${{ github.run_number }}
           path: logs/
-          retention-days: 7  # Keep logs for 1 week
+          retention-days: 7
