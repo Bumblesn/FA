@@ -3,7 +3,7 @@ name: Wipro Lighting ------------> Manager Report
 on:
   schedule:
     # Run daily at 9:30 AM IST (04:00 UTC)
-    - cron: '10 4 * * *'
+   - cron: '50 3 * * *' 
   workflow_dispatch:
 
 jobs:
