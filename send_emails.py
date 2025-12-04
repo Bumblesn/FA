@@ -71,15 +71,14 @@ def notify_admin_bad_credentials(error_msg):
       3) Else, log & print a clear CRITICAL message
     """
     ts = datetime.utcnow().isoformat() + "Z"
-    subject = f"URGENT: SMTP Authentication Failure - Manager Working Report ({ts})"
+    subject = f"URGENT Wipro Lighting: SMTP Authentication Failure - Manager Working Report ({ts})"
     body = (
-        "Hi Team,\n\n"
+        "Hello Boss,\n\n"
         "The Manager Working Report automation detected an SMTP authentication failure while attempting to send zone reports.\n\n"
         f"Error: {error_msg}\n\n"
         "Action required: Please verify the primary SMTP credentials (sender_email / sender_password) in config.json."
         " If you want automatic email alerts when primary SMTP fails, add alert_email and alert_password to config.json.\n\n"
         f"Timestamp (UTC): {ts}\n\n"
-        "Regards,\nAutomation"
     )
 
     # If there are no configured admin recipients, log and print and return
@@ -247,3 +246,4 @@ def send_failure_email(subject, message, to_recipients):
         notify_admin_bad_credentials(str(e))
     except Exception as e:
         logger.error(f"Error sending failure email: {str(e)}")
+
