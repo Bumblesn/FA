@@ -123,12 +123,29 @@ def send_email(zone_name, filename, to_recipients, cc_recipients=None):
 
     # Send the email
     try:
+    #     with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+    #         server.starttls()
+    #         server.login(SENDER_EMAIL, SENDER_PASSWORD)
+    #         all_recipients = to_recipients + cc_recipients
+    #         server.sendmail(SENDER_EMAIL, all_recipients, msg.as_string())
+    #     logger.info(f"Email sent for Zone: {zone_name} to {', '.join(to_recipients)}{', cc: ' + ', '.join(cc_recipients) if cc_recipients else ''}")
+    # except Exception as e:
+    #     logger.error(f"Error sending email for Zone: {zone_name}: {str(e)}")
+
+            try:
         with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
             server.starttls()
             server.login(SENDER_EMAIL, SENDER_PASSWORD)
             all_recipients = to_recipients + cc_recipients
             server.sendmail(SENDER_EMAIL, all_recipients, msg.as_string())
-        logger.info(f"Email sent for Zone: {zone_name} to {', '.join(to_recipients)}{', cc: ' + ', '.join(cc_recipients) if cc_recipients else ''}")
+
+        logger.info(f"Email sent for Zone: {zone_name}")
+
+    except smtplib.SMTPAuthenticationError as e:
+        logger.error(f"SMTP AUTH ERROR for Zone {zone_name}: {str(e)}")
+        notify_admin_bad_credentials(str(e))
+        return
+
     except Exception as e:
         logger.error(f"Error sending email for Zone: {zone_name}: {str(e)}")
 
