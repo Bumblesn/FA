@@ -8,9 +8,10 @@
     "smtp_server": "smtp.gmail.com",
     "smtp_port": 587,
     "sender_email": "vivek@flick2know.com",
-    "sender_password": "qklu doad lmrl rovu",
+    "sender_password": "qklu doad lmrl",
     "admin_email": ["vivek@flick2know.com"]
 
 }
+
 
 
