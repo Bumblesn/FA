@@ -29,12 +29,17 @@ jobs:
 
       - name: Check day and run script (skip Sundays)
         run: |
-          day=$(date +%u)  # 1=Mon ... 7=Sun
+          export TZ=Asia/Kolkata
+          day=$(date +%u)
+      
+          echo "Current IST time:"
+          date
+      
           if [ "$day" -eq 7 ]; then
             echo "Today is Sunday. Skipping execution."
             exit 0
           fi
-
+      
           echo "Running zone_wise_reports.py ..."
           for i in {1..5}; do
             echo "Attempt $i/5"
