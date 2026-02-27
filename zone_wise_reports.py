@@ -9,6 +9,7 @@ from send_emails import send_email, send_failure_email
 from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment, PatternFill
 import shutil
+import pytz
 
 # Verify datetime module
 assert hasattr(datetime, 'datetime'), "datetime module is not the standard library module; check for local datetime.py"
@@ -61,7 +62,9 @@ else:
 FAILURE_EMAIL = "vivek@flick2know.com"
 
 # Determine the report date
-today = datetime.datetime.now()
+#today = datetime.datetime.now()
+LOCAL_TZ = pytz.timezone("Asia/Kolkata")
+today = datetime.datetime.now(LOCAL_TZ)
 if today.weekday() == 0:  # Monday
     report_date = today - datetime.timedelta(days=2)  # Saturday
 else:
@@ -81,7 +84,8 @@ os.makedirs(ARCHIVE_DIR, exist_ok=True)
 
 # Archive old reports (older than 3 months)
 def archive_old_reports():
-    three_months_ago = (datetime.datetime.now() - datetime.timedelta(days=90)).strftime("%B_%Y")
+   #### three_months_ago = (datetime.datetime.now() - datetime.timedelta(days=90)).strftime("%B_%Y")
+    three_months_ago = (datetime.datetime.now(LOCAL_TZ) - datetime.timedelta(days=90)).strftime("%B_%Y")
     for folder in os.listdir(BASE_REPORTS_DIR):
         folder_path = os.path.join(BASE_REPORTS_DIR, folder)
         if folder != "Archive" and os.path.isdir(folder_path):
@@ -595,4 +599,5 @@ if error_log:
         print(f"Failed to send consolidated failure email: {str(e)}")
 
 logger.info("All zone reports and summary generated and emails sent successfully.")
+
 print("Script execution completed.")
