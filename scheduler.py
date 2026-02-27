@@ -6,6 +6,8 @@ import logging
 from datetime import datetime
 from send_emails import send_failure_email
 import os
+import pytz
+LOCAL_TZ = pytz.timezone("Asia/Kolkata")
 
 # Set up logging
 log_dir = "logs"
@@ -35,7 +37,8 @@ except Exception as e:
 
 def run_zone_reports():
     # Skip Sunday (weekday 6)
-    if datetime.now().weekday() == 6:
+    # if datetime.now().weekday() == 6:
+    if datetime.now(LOCAL_TZ).weekday() == 6:
         logger.info("Today is Sunday. Skipping report generation.")
         return
     
@@ -75,10 +78,18 @@ def run_zone_reports():
                 logger.error(f"Failed to send failure email: {str(e)}")
     
     # Log last execution time and status
-    logger.info(f"Last execution completed at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - {execution_status} on attempt {last_attempt}")
+    #logger.info(f"Last execution completed at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - {execution_status} on attempt {last_attempt}")
+    logger.info(f"Last execution completed at {datetime.now(LOCAL_TZ).strftime('%Y-%m-%d %H:%M:%S IST')} - {execution_status} on attempt {last_attempt}")
 
 # Schedule the script
-schedule.every().day.at(config.get("schedule_time", "23:38")).do(run_zone_reports)
+# ## schedule.every().day.at(config.get("schedule_time", "23:38")).do(run_zone_reports)
+local_run_time = config.get("schedule_time", "08:00")
+h, m = map(int, local_run_time.split(":"))
+local_dt = LOCAL_TZ.localize(datetime.now().replace(hour=h, minute=m, second=0))
+utc_run_time = local_dt.astimezone(pytz.utc).strftime("%H:%M")
+
+schedule.every().day.at(utc_run_time).do(run_zone_reports)
+logger.info(f"Scheduler set for {local_run_time} IST ({utc_run_time} UTC)")
 
 logger.info("Scheduler started. Waiting for daily execution (skipping Sundays)...")
 
@@ -87,4 +98,5 @@ while True:
     schedule.run_pending()
     time.sleep(60)
     
+
 run_zone_reports()
