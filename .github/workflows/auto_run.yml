@@ -48,3 +48,14 @@ jobs:
           name: daily-logs-${{ github.run_number }}
           path: logs/
           retention-days: 7
+      - name: Send failure email on all retries exhausted
+        if: failure()
+        run: |
+          python - <<EOF
+          from send_emails import send_failure_email
+          send_failure_email(
+              "GitHub Actions - All Retries Failed",
+              "zone_wise_reports.py failed all 5 attempts. Check GitHub Actions logs.",
+              ["vivek@flick2know.com"]
+          )
+          EOF
