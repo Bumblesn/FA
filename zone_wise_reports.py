@@ -11,10 +11,8 @@ from openpyxl.styles import Font, Alignment, PatternFill
 import shutil
 import pytz
 
-# Verify datetime module
 assert hasattr(datetime, 'datetime'), "datetime module is not the standard library module; check for local datetime.py"
 
-# Set up logging
 log_dir = "logs"
 os.makedirs(log_dir, exist_ok=True)
 logging.basicConfig(
@@ -27,10 +25,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger()
 
-# Initialize error log for consolidated failure email
 error_log = []
 
-# Load configuration
 try:
     with open("config.json", "r") as f:
         config = json.load(f)
@@ -49,7 +45,6 @@ except Exception as e:
     base_url = "https://workozy.retool.com/api/public/4209b62f-fb47-46a5-af8f-f46dc07036a2/query?queryName="
     admin_email = ""
 
-# Handle admin_email for summary report
 if isinstance(admin_email, str) and admin_email:
     admin_emails = [admin_email]
 elif isinstance(admin_email, list):
@@ -58,10 +53,8 @@ else:
     admin_emails = []
     logger.warning("Invalid or empty admin_email in config.json.")
 
-# Hardcode failure email recipient
 FAILURE_EMAIL = "vivek@flick2know.com"
 
-# Determine the report date
 #today = datetime.datetime.now()
 LOCAL_TZ = pytz.timezone("Asia/Kolkata")
 today = datetime.datetime.now(LOCAL_TZ)
@@ -73,16 +66,13 @@ else:
 report_date_str = report_date.strftime("%Y%m%d")
 month_year = report_date.strftime("%B_%Y")
 
-# Directory to save reports
 BASE_REPORTS_DIR = "Zone_Reports"
 MONTH_REPORTS_DIR = os.path.join(BASE_REPORTS_DIR, month_year)
 ARCHIVE_DIR = os.path.join(BASE_REPORTS_DIR, "Archive")
 
-# Create directories
 os.makedirs(MONTH_REPORTS_DIR, exist_ok=True)
 os.makedirs(ARCHIVE_DIR, exist_ok=True)
 
-# Archive old reports (older than 3 months)
 def archive_old_reports():
    #### three_months_ago = (datetime.datetime.now() - datetime.timedelta(days=90)).strftime("%B_%Y")
     three_months_ago = (datetime.datetime.now(LOCAL_TZ) - datetime.timedelta(days=90)).strftime("%B_%Y")
@@ -103,7 +93,6 @@ print("Archiving old reports...")
 archive_old_reports()
 print("Archiving complete.")
 
-# API URLs
 API_ENDPOINTS = {
     "Report": "Report",
     "Zone": "Zone",
@@ -112,7 +101,6 @@ API_ENDPOINTS = {
     "PrimaryCategory": "PrimaryCategory"
 }
 
-# Headers
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:137.0) Gecko/20100101 Firefox/20100101',
     'Accept': '*/*',
@@ -131,7 +119,6 @@ HEADERS = {
     'TE': 'trailers'
 }
 
-# Base Payload
 BASE_PAYLOAD = {
     "userParams": {
         "queryParams": {"length": 0},
@@ -149,7 +136,6 @@ BASE_PAYLOAD = {
     "streamResponse": False
 }
 
-# Load email configuration
 def load_email_config():
     try:
         with open("email_config.json", "r") as f:
@@ -163,7 +149,6 @@ def load_email_config():
         print(f"Error loading email_config.json: {str(e)}")
         return {}
 
-# Format Excel file
 def format_excel(filename):
     try:
         wb = load_workbook(filename)
@@ -197,6 +182,13 @@ def format_excel(filename):
                         cell.number_format = "0"
                 except (ValueError, TypeError):
                     pass
+
+        for row in ws.iter_rows(min_row=2):
+            first_val = str(row[2].value) if row[2].value is not None else ""
+            if first_val.endswith(" Total"):
+                for cell in row:
+                    cell.font = Font(bold=True, color="FFFFFF")
+                    cell.fill = PatternFill(start_color="707070", end_color="707070", fill_type="solid")
         wb.save(filename)
         logger.info(f"Formatted Excel file: {filename}")
         return True
@@ -209,7 +201,6 @@ def format_excel(filename):
         print(f"Error formatting {filename}: {str(e)}")
         return False
 
-# Function to fetch data from APIs
 def fetch_data(api_name, zone_id=None):
     url = base_url + api_name
     payload = BASE_PAYLOAD.copy()
@@ -247,6 +238,12 @@ def fetch_data(api_name, zone_id=None):
                 if api_name == "Zone" and "queryData" in data and "zId" in data["queryData"]:
                     zone_data = [{"zId": zid, "zName": zname} for zid, zname in zip(data["queryData"]["zId"], data["queryData"]["zName"])]
                     return pd.DataFrame(zone_data)
+                if api_name == "Region" and "queryData" in data and "RId" in data["queryData"]:
+                    region_data = [
+                        {"RId": str(rid), "RegionName": rname}
+                        for rid, rname in zip(data["queryData"]["RId"], data["queryData"]["RegionName"])
+                    ]
+                    return pd.DataFrame(region_data)
                 if api_name == "Report" and "queryData" in data:
                     report_data = [
                         {key: values[i] for key, values in data["queryData"].items()}
@@ -281,7 +278,6 @@ def fetch_data(api_name, zone_id=None):
     })
     return pd.DataFrame()
 
-# Fetch non-report data
 print("Fetching Zone data...")
 df_zone = fetch_data("Zone")
 print("Zone data fetch complete.")
@@ -289,13 +285,20 @@ print("Zone data fetch complete.")
 df_employee = fetch_data("Employee")
 print("Employee data fetched.")
 
+print("Fetching Region data...")
+df_region = fetch_data("Region")
+if df_region.empty:
+    logger.warning("Region data is empty. Region column will be blank in reports.")
+    print("WARNING: Region data is empty.")
+else:
+    print(f"Region data fetched: {df_region.shape[0]} rows.")
+
 df_beat = fetch_data("Beat")
 print("Beat data fetched.")
 
 df_primary_category = fetch_data("PrimaryCategory")
 print("PrimaryCategory data fetched.")
 
-# Ensure Zone API has data
 if df_zone.empty:
     error_log.append({
         "context": "Zone Data Check",
@@ -317,26 +320,26 @@ if df_zone.empty:
             })
     exit()
 
-# 🔹 Preprocess Zone Data
+
 df_zone.rename(columns={"zId": "ZoneId", "zName": "Zone"}, inplace=True)
 
-# 🔹 Get unique zones
+
 unique_zones = df_zone[['ZoneId', 'Zone']].drop_duplicates()
 
-# 🔹 Preprocess Employee Data
+
 if not df_employee.empty:
     df_employee["ESMId"] = df_employee["Id"].apply(lambda x: x[0] if isinstance(x, list) and x else x)
     df_employee["User"] = df_employee["Cname"].apply(lambda x: x[0] if isinstance(x, list) and x else x)
 
-# Load email configuration
+
 print("Loading email configuration...")
 email_config = load_email_config()
 print("Email configuration loaded.")
 
-# Collect all zone reports for summary
+
 all_zone_reports = []
 
-# 🔹 Process reports for each zone
+
 for _, zone_row in unique_zones.iterrows():
     zone_id = zone_row['ZoneId']
     zone_name = zone_row['Zone']
@@ -344,7 +347,7 @@ for _, zone_row in unique_zones.iterrows():
     print(f"Starting processing for Zone: {zone_name} (ZoneId: {zone_id})")
     
     try:
-        # Fetch report data
+    
         print(f"Fetching data for Zone: {zone_name}")
         df_zone_report = fetch_data("Report", zone_id=zone_id)
         
@@ -360,12 +363,24 @@ for _, zone_row in unique_zones.iterrows():
         
         print(f"Data fetched successfully for Zone: {zone_name} ({df_zone_report.shape[0]} rows)")
         
-        # 🔹 Preprocess Report Data
+       
         if "ESMId" in df_zone_report.columns:
             df_zone_report["ESMId"] = df_zone_report["ESMId"].apply(lambda x: x[0] if isinstance(x, list) and x else x)
         
-        # 🔹 Data Processing
+      
         df_zone_report = df_zone_report.merge(df_zone[['ZoneId', 'Zone']], on="ZoneId", how="left").drop(columns=["ZoneId"], errors="ignore")
+
+        if not df_region.empty and "RegionId" in df_zone_report.columns:
+            df_zone_report["RegionId"] = df_zone_report["RegionId"].astype(str)
+            df_zone_report = df_zone_report.merge(
+                df_region[['RId', 'RegionName']],
+                left_on="RegionId",
+                right_on="RId",
+                how="left"
+            ).drop(columns=["RegionId", "RId"], errors="ignore")
+            df_zone_report.rename(columns={"RegionName": "Region"}, inplace=True)
+        else:
+            df_zone_report["Region"] = ""
         
         if not df_employee.empty and "ESMId" in df_zone_report.columns:
             df_zone_report = df_zone_report.merge(df_employee[['ESMId', 'User']], on="ESMId", how="left").drop(columns=["ESMId"], errors="ignore")
@@ -389,7 +404,7 @@ for _, zone_row in unique_zones.iterrows():
                 df_zone_report.rename(columns={"User_y": "JointWorkingEmployeeName"}, inplace=True)
             df_zone_report.drop(columns=["JointWorkingEmployeeId", "ESMId"], inplace=True, errors="ignore")
         
-        # 🔹 Rename columns
+   
         df_zone_report.rename(columns={
             "DayStartDateKey": "Date",
             "ESMRank": "User Rank",
@@ -411,26 +426,25 @@ for _, zone_row in unique_zones.iterrows():
             "JWTotalNetValue": "JW Total Net Value"
         }, inplace=True)
         
-        # 🔹 Update User Rank
+    
         if "User Rank" in df_zone_report.columns:
             df_zone_report["User Rank"] = df_zone_report["User Rank"].replace({"ESM": "Employee", "ASM": "SO"})
         
-        # 🔹 Define final headers
+ 
         final_headers = [
-            "Date", "Zone", "User", "User Rank", "JointWorkingEmployeeName", "Joint Working",
+            "Date", "Zone", "Region", "User", "User Rank", "JointWorkingEmployeeName", "Joint Working",
             "Selected Beat", "JW TC", "TC", "JW PC", "PC", "LED BULB Qty", "JW LED BULB Qty",
             "LED Batten Qty", "JW LED Batten Qty", "LED DOWNLIGHT TotalValue", "JW LED DOWNLIGHT TotalValue",
             "MCB Qty", "JW MCB Qty", "Total Net Value", "JW Total Net Value"
         ]
         
-        # Ensure all columns exist
+        
         for column in final_headers:
             if column not in df_zone_report.columns:
                 df_zone_report[column] = ""
         
         df_zone_report = df_zone_report[final_headers]
         
-        # 🔹 Convert numeric columns to integers
         numeric_columns = ["JW TC", "TC", "JW PC", "PC", "LED BULB Qty", "JW LED BULB Qty",
                            "LED Batten Qty", "JW LED Batten Qty", "LED DOWNLIGHT TotalValue", "JW LED DOWNLIGHT TotalValue",
                            "MCB Qty", "JW MCB Qty", "Total Net Value", "JW Total Net Value"]
@@ -438,9 +452,28 @@ for _, zone_row in unique_zones.iterrows():
             if col in df_zone_report.columns:
                 df_zone_report[col] = pd.to_numeric(df_zone_report[col], errors='coerce').round().fillna(0).astype(int)
         
+        # logger.info(f"Processed report for {zone_name}: {df_zone_report.shape[0]} rows")
+    
         logger.info(f"Processed report for {zone_name}: {df_zone_report.shape[0]} rows")
-        
-        # 🔹 Save Zone Report
+
+        numeric_columns_for_subtotal = [
+            "JW TC", "TC", "JW PC", "PC", "LED BULB Qty", "JW LED BULB Qty",
+            "LED Batten Qty", "JW LED Batten Qty", "LED DOWNLIGHT TotalValue",
+            "JW LED DOWNLIGHT TotalValue", "MCB Qty", "JW MCB Qty",
+            "Total Net Value", "JW Total Net Value"
+        ]
+        chunks = []
+        for region_val, region_group in df_zone_report.groupby("Region", sort=False):
+            chunks.append(region_group)
+            subtotal = {col: "" for col in final_headers}
+            # subtotal["Region"] = f"{region_val} Total"
+            subtotal["Date"] = f"{region_val} Total"
+            for col in numeric_columns_for_subtotal:
+                if col in region_group.columns:
+                    subtotal[col] = int(region_group[col].sum())
+            chunks.append(pd.DataFrame([subtotal]))
+        df_zone_report = pd.concat(chunks, ignore_index=True)
+
         safe_zone_name = "".join(c for c in zone_name if c.isalnum() or c in (' ', '_')).strip().replace(" ", "_")
         filename = os.path.join(MONTH_REPORTS_DIR, f"Manager_Working_report_{safe_zone_name}_{report_date_str}.xlsx")
         
@@ -466,10 +499,6 @@ for _, zone_row in unique_zones.iterrows():
             print(f"Failed to save report for Zone: {zone_name}: {str(e)}")
             continue
         
-        # 🔹 Collect for summary
-        all_zone_reports.append(df_zone_report)
-        
-        # 🔹 Send Email
         zone_email_config = email_config.get(safe_zone_name, {})
         to_recipients = [email for email in zone_email_config.get("to", []) if email]
         cc_recipients = [email for email in zone_email_config.get("cc", []) if email]
@@ -507,28 +536,26 @@ for _, zone_row in unique_zones.iterrows():
         print(f"Failed processing for Zone: {zone_name}: {str(e)}")
         continue
 
-# 🔹 Generate Summary Report
 print("Generating summary report...")
 if all_zone_reports:
     try:
         summary_df = pd.concat(all_zone_reports, ignore_index=True)
         summary_filename = os.path.join(MONTH_REPORTS_DIR, f"Summary_Working_report_{report_date_str}.xlsx")
         
-        # Create pivot table
         pivot = pd.pivot_table(
             summary_df,
             values=["TC", "PC", "Total Net Value"],
-            index=["Zone"],
+            index=["Region", "Zone"],
             aggfunc="sum",
             fill_value=0
         ).reset_index()
+        metric_cols = [c for c in pivot.columns if c not in ("Region", "Zone")]
+        pivot = pivot[["Region", "Zone"] + metric_cols]
         
-        # Convert numeric columns to integers
         for col in ["TC", "PC", "Total Net Value"]:
             if col in pivot.columns:
                 pivot[col] = pd.to_numeric(pivot[col], errors='coerce').round().fillna(0).astype(int)
         
-        # Save summary
         print(f"Saving summary report...")
         pivot.to_excel(summary_filename, index=False)
         if format_excel(summary_filename):
@@ -542,7 +569,6 @@ if all_zone_reports:
             })
             print(f"Failed to format summary report")
         
-        # Email summary to admin only
         if admin_emails:
             print("Sending summary report email...")
             try:
@@ -580,11 +606,9 @@ else:
         "status_code": None
     })
 
-# 🔹 Send Consolidated Failure Email
 if error_log:
     print("Sending consolidated failure email...")
     try:
-        # Format error message
         error_message = "The following errors occurred during script execution:\n\n"
         for error in error_log:
             error_message += f"**Context**: {error['context']}\n"
